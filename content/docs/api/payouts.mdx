@@ -181,7 +181,7 @@ Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page
 | `bank_transaction_id`  | string \| null   | Transaction reference assigned by the rail bank.                                                                     |
 | `sender_name`          | string \| null   | Sender name, if supplied on create.                                                                                  |
 | `created_at`           | integer          | Creation timestamp, milliseconds since epoch.                                                                        |
-| `completed_at`         | string \| null   | Completion timestamp, milliseconds since epoch. `null` while in flight.                                              |
+| `completed_at`         | integer \| null  | Completion timestamp, milliseconds since epoch (same shape as `created_at`). `null` while in flight.                 |
 
 #### Payout status codes
 
