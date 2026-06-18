@@ -1,0 +1,148 @@
+---
+title: Callbacks integration
+description: Receive signed event notifications when payouts and beneficiaries change state.
+---
+
+<Brand /> sends real-time notifications to your application when important
+events occur — payout state changes, beneficiary verification completes, and so
+on. Each notification is an **HTTP POST** request to your configured endpoint
+with a JSON payload.
+
+## How to configure webhooks
+
+<Steps>
+<Step>
+### Sign in to your account
+
+Sign in to the <DashboardLink>merchant dashboard</DashboardLink>.
+</Step>
+
+<Step>
+### Open the webhooks panel
+
+Navigate to **Dashboard → Settings → Security → Webhooks**.
+</Step>
+
+<Step>
+### Register endpoints
+
+Enter the public HTTPS URL for each webhook type you want to receive.
+</Step>
+
+<Step>
+### Copy the signing secret
+
+Copy the **shared signing secret** from the same Webhooks section and store it
+in your secret manager. You will need it to verify incoming requests.
+</Step>
+</Steps>
+
+## What you'll receive
+
+- **Method:** `POST`
+- **Content-Type:** `application/json`
+- **Header:** `X-Signature`
+- **Payload:** JSON
+
+## Payout status update
+
+```json
+{
+  "payout_id": "TID251224095503GMA37C3EE",
+  "bank_currency": "inr",
+  "beneficiary_id": "WBID251224092108GMC9757E",
+  "client_reference_id": "BIGBULL0001-2",
+  "amount": "100.0",
+  "fee": "0.0",
+  "payout_status": "processing",
+  "bank_transaction_id": null,
+  "status_code": "PROCESSING",
+  "status_message": "Payout in Progress",
+  "sender_name": null,
+  "created_at": 1766570103137,
+  "completed_at": null
+}
+```
+
+## Bank-account beneficiary status update
+
+```json
+{
+  "beneficiary_id": "WBID251024044324GM560AAE",
+  "bank_currency": "inr",
+  "bank_ifsc_code": "SBIN0000112",
+  "account_number": "1234567890",
+  "account_holder_name": "AMIT DOE",
+  "status_code": "VERIFIED",
+  "status_message": "Verification Completed",
+  "verification_status": "active",
+  "verification_data_bank_ref_no": "BRN-20251024T044324777-93VQR9",
+  "verification_data_bank_beneficiary_name": "USER_NAME",
+  "verification_data_bank_transaction_remark": "Transaction Successful",
+  "verification_data_bank_transaction_status": "VERIFIED"
+}
+```
+
+## UPI beneficiary status update
+
+```json
+{
+  "beneficiary_id": "WBID251024044324GM560AAE",
+  "bank_currency": "inr",
+  "vpa": "user@upi",
+  "account_holder_name": "AMIT DOE",
+  "status_code": "VERIFIED",
+  "status_message": "Verification Completed",
+  "verification_status": "active",
+  "verification_data_bank_ref_no": null,
+  "verification_data_bank_beneficiary_name": "USER_NAME",
+  "verification_data_bank_transaction_remark": null,
+  "verification_data_bank_transaction_status": "VERIFIED"
+}
+```
+
+## Setup requirements
+
+- Provide a **public HTTPS callback URL** for each webhook type.
+- Your endpoint must accept **HTTP POST** requests with a JSON body.
+- A **webhook signing secret** is issued from
+  **Dashboard → Settings → Security → Webhooks** for signature verification.
+
+## Signature verification
+
+Every callback request includes an `X-Signature` header. You **must verify**
+this signature before processing the payload.
+
+### Server-side signing (Ruby)
+
+The signature is generated as:
+
+```ruby
+OpenSSL::HMAC.hexdigest("SHA256", secret_key, payload.to_json)
+```
+
+### Verification (JavaScript / TypeScript)
+
+```ts title="verify.ts"
+import crypto from "crypto";
+
+export function verifySignature(signature: string, payload: unknown, secret: string): boolean {
+  const computed = crypto
+    .createHmac("sha256", secret)
+    .update(JSON.stringify(payload))
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature, "hex"),
+    Buffer.from(computed, "hex"),
+  );
+}
+```
+
+## Security considerations
+
+- Store callback secrets securely (secret manager, not source control).
+- Always use **timing-safe** comparison when verifying.
+- Reject the webhook if signature verification fails.
+- Do not trust webhook payloads without verification.
+- Treat webhooks as **event triggers** and use the status APIs as the source of truth.

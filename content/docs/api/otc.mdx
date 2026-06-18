@@ -1,0 +1,179 @@
+---
+title: OTC quotes & orders
+description: Request FX prices and execute conversion orders.
+---
+
+The OTC API exposes a two-step flow: **request a quote** with a guaranteed rate,
+then **place an order** against that quote. You can also create an order
+directly without a quote when slippage protection isn't needed.
+
+## Create OTC quote
+
+**POST** <code><ApiUrl env="production" />/market/otc_quotes/new</code>
+
+Request schema: **`OtcQuoteCreate`**.
+
+Creates a new OTC quote for the given market and side. Quotes are time-bound
+and must be used before they expire.
+
+### Request body
+
+| Field        | Type   | Required | Notes                                          |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| `req_amount` | string | yes      | Requested quote amount.                        |
+| `market`     | string | yes      | Trading pair (for example, `usdtinr`).         |
+| `side`       | string | yes      | Quote side — currently `sell` only.            |
+
+```json
+{
+  "req_amount": "500",
+  "market": "usdtinr",
+  "side": "sell"
+}
+```
+
+### Responses
+
+| Code  | Meaning                          |
+| ----- | -------------------------------- |
+| `200` | OTC quote created successfully.  |
+
+The response body uses the **`OtcQuoteResponse`** schema — see field table under
+[Get OTC quote status](#get-otc-quote-status).
+
+## Get OTC quote status
+
+**GET** <code><ApiUrl env="production" />/market/otc_quotes/status</code>
+
+Retrieves the list of OTC quotes with their current state.
+
+### Query parameters
+
+| Parameter   | Type    | Notes                                                          |
+| ----------- | ------- | -------------------------------------------------------------- |
+| `quote_id`  | string  | The unique identifier of the quote.                            |
+| `page`      | integer | Pagination — page number.                                      |
+| `limit`     | integer | Pagination — page size.                                        |
+| `ordering`  | string  | Sort direction: `asc` or `desc` (default `desc`).              |
+| `order_by`  | string  | Sort field: `id`, `created_at`, `updated_at`.                  |
+| `range`     | string  | Date filter field: `created` or `updated` (default `created`). |
+| `from`/`to` | string  | ISO 8601 datetime bounds.                                      |
+
+### Response fields — `OtcQuoteResponse`
+
+| Field             | Type             | Description                                                                                |
+| ----------------- | ---------------- | ------------------------------------------------------------------------------------------ |
+| `quote_id`        | string           | Unique quote identifier.                                                                   |
+| `market`          | string           | Trading pair (for example, `usdtinr`).                                                     |
+| `req_amount`      | string           | Amount originally requested.                                                               |
+| `allotted_amount` | string           | Amount the platform allotted for the quote.                                                |
+| `avg_price`       | string           | Average execution price.                                                                   |
+| `side`            | enum string      | Quote side. Currently only `sell`.                                                         |
+| `quote_status`    | enum string      | Current state. One of `active`, `expired`, `consumed`.                                     |
+| `remark`          | string \| null   | Optional remark or system note.                                                            |
+| `otc_orders`      | array            | Orders that have been created from this quote (each follows `OtcOrderResponse`).           |
+| `created_at`      | integer          | Creation timestamp, milliseconds since epoch.                                              |
+| `expired_at`      | integer          | Expiry timestamp, milliseconds since epoch.                                                |
+
+## Place OTC order using a quote
+
+**PATCH** <code><ApiUrl env="production" />/market/otc_quotes/place_order/{'{quote_id}'}</code>
+
+Path template: `/market/otc_quotes/place_order/{quote_id}`. Places an OTC order
+against an active quote. Fails if the quote is expired or the amount has changed
+since the quote was issued.
+
+### Path parameters
+
+| Parameter   | Type    | Required | Notes                                              |
+| ----------- | ------- | -------- | -------------------------------------------------- |
+| `quote_id`  | string  | yes      | The quote ID, for example `OQID260101143053GM990BB3`. |
+
+### Responses
+
+| Code  | Meaning                          |
+| ----- | -------------------------------- |
+| `200` | OTC order placed successfully.   |
+| `400` | Quote error (expired or stale).  |
+
+#### 400 error shape
+
+`400` returns an `errors` array of error codes — typically `market.otc_quote.expired`
+or `market.otc_quote.amount_updated`.
+
+```json title="400 Quote error"
+{
+  "errors": [
+    "market.otc_quote.expired",
+    "market.otc_quote.amount_updated"
+  ]
+}
+```
+
+## Get OTC orders
+
+**GET** <code><ApiUrl env="production" />/market/otc_orders</code>
+
+Retrieves OTC orders with optional filtering.
+
+### Query parameters
+
+| Parameter             | Type    | Notes                                          |
+| --------------------- | ------- | ---------------------------------------------- |
+| `order_id`            | string  | Filter by specific order ID.                   |
+| `client_reference_id` | string  | Filter by client-provided reference ID.        |
+| `market`              | string  | Filter by trading pair.                        |
+| `page`, `limit`       | integer | Pagination.                                    |
+| `ordering`, `order_by`| string  | Sorting.                                       |
+| `range`, `from`, `to` | string  | Date filtering.                                |
+
+### Response fields — `OtcOrderResponse`
+
+| Field                 | Type             | Description                                                       |
+| --------------------- | ---------------- | ----------------------------------------------------------------- |
+| `order_id`            | string           | Unique OTC order identifier.                                      |
+| `market`              | string           | Trading pair.                                                     |
+| `client_reference_id` | string \| null   | Reference ID supplied on create, if any.                          |
+| `amount`              | string           | Executed amount.                                                  |
+| `price`               | string           | Executed price.                                                   |
+| `fee`                 | string           | Fee charged for the order.                                        |
+| `fee_currency`        | string           | Currency in which the fee is charged.                             |
+| `tax`                 | string           | Tax charged on the order.                                         |
+| `tax_currency`        | string           | Currency in which the tax is charged.                             |
+| `side`                | enum string      | Order side. Currently only `sell`.                                |
+| `order_status`        | string           | Current order status.                                             |
+| `created_at`          | integer          | Creation timestamp, milliseconds since epoch.                     |
+
+## Create OTC order (without a quote)
+
+**POST** <code><ApiUrl env="production" />/market/otc_orders</code>
+
+Request schema: **`OtcOrderCreate`**.
+
+Creates an OTC order directly, without first requesting a quote. The trade
+executes at the current market rate; use the quote flow when you need a
+guaranteed rate locked in.
+
+### Request body
+
+| Field                 | Type   | Required | Notes                                            |
+| --------------------- | ------ | -------- | ------------------------------------------------ |
+| `market`              | string | yes      | Trading pair (for example, `usdtinr`).           |
+| `amount`              | string | yes      | Base-asset amount.                               |
+| `side`                | string | yes      | Order side — currently `sell` only.              |
+| `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).    |
+
+```json
+{
+  "market": "usdtinr",
+  "amount": "100.0",
+  "side": "sell",
+  "client_reference_id": "TEST1234560"
+}
+```
+
+### Responses
+
+| Code  | Meaning                          |
+| ----- | -------------------------------- |
+| `200` | OTC order created successfully.  |

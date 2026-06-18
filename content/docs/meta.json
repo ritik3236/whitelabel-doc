@@ -1,0 +1,4 @@
+{
+  "title": "Documentation",
+  "pages": ["index", "---Getting started---", "getting-started", "---API reference---", "api", "---Releases---", "changelog"]
+}

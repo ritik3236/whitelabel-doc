@@ -1,0 +1,19 @@
+---
+title: HTTP status codes
+description: Standard HTTP codes returned across every {{BRAND}} endpoint.
+---
+
+<Brand /> APIs use standard HTTP status codes to indicate the outcome of each
+request.
+
+| Code | Name                  | Meaning                                                          |
+| ---- | --------------------- | ---------------------------------------------------------------- |
+| 200  | Success               | Request was processed successfully.                              |
+| 400  | Bad Request           | Invalid request syntax or missing required parameters.           |
+| 401  | Unauthorized          | Authentication failed or credentials were not provided.          |
+| 402  | Request Failed        | Valid request but failed (for example, insufficient funds).      |
+| 403  | Forbidden             | Access denied due to insufficient permissions.                   |
+| 404  | Not Found             | Requested resource or endpoint does not exist.                   |
+| 405  | Method Not Allowed    | The HTTP method used is not allowed for the specified endpoint.  |
+| 422  | Unprocessable Entity  | The request was well-formed but contained validation errors.     |
+| 500  | Internal Server Error | An unexpected error occurred on the server.                      |

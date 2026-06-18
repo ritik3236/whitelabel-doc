@@ -1,0 +1,201 @@
+---
+title: Payouts
+description: Initiate bank or UPI payouts and track their lifecycle.
+---
+
+The Payouts API initiates outbound transfers and exposes their state. Both
+**bank account** and **UPI** rails are supported; the rail is inferred from the
+fields you provide.
+
+## Create payout
+
+**POST** <code><ApiUrl env="production" />/account/payouts/initiate</code>
+
+Request schema: **`PayoutCreateRequest`**.
+
+Initiates a bank-account or UPI payout for a specified amount and currency.
+
+- If `vpa` is provided, a **UPI payout** is initiated.
+- If `account_number` and `bank_ifsc_code` are provided, a **bank-account
+  payout** is initiated.
+
+On success the payout enters `processing` state and can be tracked using the
+returned `payout_id`.
+
+### Request body
+
+| Field                  | Type    | Required | Description                                                                                  |
+| ---------------------- | ------- | -------- | -------------------------------------------------------------------------------------------- |
+| `bank_currency`        | string  | yes      | Fiat currency code for the payout (for example, `inr`).                                       |
+| `amount`               | string  | yes      | Requested payout amount. Must be a positive number, sent as a string.                         |
+| `account_holder_name`  | string  | yes      | Full name of the bank account / UPI holder.                                                   |
+| `client_reference_id`  | string  | yes      | Unique client reference (`^[A-Za-z0-9_-]{8,64}$`). Acts as the idempotency key.               |
+| `bank_ifsc_code`       | string  | conditional | Bank IFSC / SWIFT code. Required together with `account_number` for bank payouts.          |
+| `account_number`       | string  | conditional | Bank account number. Required together with `bank_ifsc_code` for bank payouts.             |
+| `vpa`                  | string  | conditional | UPI ID of the recipient. Mutually exclusive with `account_number` and `bank_ifsc_code`.      |
+| `sender_name`          | string  | no       | Name of the sender. Max 128 chars, alphabetic + spaces only — pattern `^[A-Za-z ]+$`.         |
+| `penny_drop_required`  | boolean | no       | Whether bank-account verification via penny drop should run before payout. Default `true`.    |
+
+### Examples
+
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="Request — bank account"
+{
+  "bank_currency": "inr",
+  "amount": "100",
+  "account_holder_name": "Jhon Deo",
+  "bank_ifsc_code": "HDFC0000044",
+  "account_number": "1234567890",
+  "client_reference_id": "BIGBULL0001-2",
+  "penny_drop_required": true
+}
+```
+
+```json title="Response — 201 Created"
+{
+  "payout_id": "TID251224095503GMA37C3EE",
+  "client_reference_id": "BIGBULL0001-2",
+  "bank_currency": "inr",
+  "amount": "100.0",
+  "fee": "0.0",
+  "payout_status": "processing",
+  "status_code": "PROCESSING",
+  "status_message": "Payout in Progress",
+  "created_at": 1766570103137
+}
+```
+
+```json title="Request — UPI"
+{
+  "bank_currency": "inr",
+  "amount": "100",
+  "account_holder_name": "Jhon Deo",
+  "vpa": "user@okaxis",
+  "client_reference_id": "BIGBULL0001-2"
+}
+```
+
+```json title="Response — 201 Created"
+{
+  "payout_id": "TID251224095503GMA37C3EE",
+  "client_reference_id": "BIGBULL0001-2",
+  "bank_currency": "inr",
+  "amount": "100.0",
+  "fee": "0.0",
+  "payout_status": "processing",
+  "status_code": "PROCESSING",
+  "status_message": "Payout in Progress",
+  "created_at": 1766570103137
+}
+```
+
+</div>
+
+### Responses
+
+| Code  | Meaning                       |
+| ----- | ----------------------------- |
+| `201` | Payout created successfully.  |
+| `400` | Invalid request parameters.   |
+| `401` | Unauthorized.                 |
+
+#### Error response shape
+
+Both `400` and `401` return a single `error` field with a human-readable
+message.
+
+```json title="400 Invalid"
+{ "error": "Invalid payout request" }
+```
+
+```json title="401 Unauthorized"
+{ "error": "Unauthorized" }
+```
+
+## Get payout status
+
+**GET** <code><ApiUrl env="production" />/account/payouts/status</code>
+
+Track the progress of a payout using the payout ID or your `client_reference_id`.
+
+### Query parameters
+
+| Parameter              | Type    | Notes                                                                       |
+| ---------------------- | ------- | --------------------------------------------------------------------------- |
+| `payout_id`            | string  | The unique identifier of the payout.                                        |
+| `client_reference_id`  | string  | The client-provided reference ID.                                           |
+| `bank_transaction_id`  | string  | The transaction ID assigned by the bank.                                    |
+| `bank_currency`        | string  | Filter by fiat currency.                                                    |
+| `page`                 | integer | Pagination — page number.                                                   |
+| `limit`                | integer | Pagination — page size.                                                     |
+| `ordering`             | string  | Sort direction: `asc` or `desc` (default `desc`).                           |
+| `order_by`             | string  | Sort field: `id`, `created_at`, `updated_at`.                               |
+| `range`                | string  | Date filter field: `created` or `updated` (default `created`).              |
+| `from`                 | string  | Start datetime (ISO 8601), e.g. `2025-09-30T00:00:00Z`.                     |
+| `to`                   | string  | End datetime (ISO 8601), e.g. `2025-09-30T23:59:59Z`.                       |
+
+Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page`.
+
+### Responses
+
+| Code  | Meaning                                    |
+| ----- | ------------------------------------------ |
+| `200` | Payout status retrieved successfully.      |
+
+### Response
+
+```json title="200 OK"
+[
+  {
+    "payout_id": "TID251224095503GMA37C3EE",
+    "bank_currency": "inr",
+    "beneficiary_id": "WBID251224092108GMC9757E",
+    "client_reference_id": "BIGBULL0001-2",
+    "amount": "100.0",
+    "fee": "0.0",
+    "payout_status": "processing",
+    "bank_transaction_id": null,
+    "status_code": "PROCESSING",
+    "status_message": "Payout in Progress",
+    "sender_name": null,
+    "created_at": 1766570103137,
+    "completed_at": null
+  }
+]
+```
+
+#### Response fields — `PayoutResponse`
+
+| Field                  | Type             | Description                                                                                                          |
+| ---------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `payout_id`            | string           | Unique payout identifier issued by <Brand />.                                                                        |
+| `bank_currency`        | string           | Fiat currency of the payout.                                                                                         |
+| `beneficiary_id`       | string \| null   | Linked beneficiary, when applicable.                                                                                 |
+| `client_reference_id`  | string           | Your idempotency key as supplied on create.                                                                          |
+| `amount`               | string           | Payout amount (string-encoded number).                                                                               |
+| `fee`                  | string           | Fee charged for this payout.                                                                                         |
+| `payout_status`        | enum string      | Primary state — use this for routing logic. One of `processing`, `succeed`, `rejected`, `refunded`.                  |
+| `status_code`          | enum string      | Internal sub-status for operational tracking. Not the primary state — see [Payout status codes](#payout-status-codes) below for the full enum. |
+| `status_message`       | string           | Human-readable explanation of the current status.                                                                    |
+| `bank_transaction_id`  | string \| null   | Transaction reference assigned by the rail bank.                                                                     |
+| `sender_name`          | string \| null   | Sender name, if supplied on create.                                                                                  |
+| `created_at`           | integer          | Creation timestamp, milliseconds since epoch.                                                                        |
+| `completed_at`         | string \| null   | Completion timestamp, milliseconds since epoch. `null` while in flight.                                              |
+
+#### Payout status codes
+
+`status_code` is one of the following values. Use `payout_status` for primary
+routing logic and `status_code` for finer-grained operational visibility.
+
+`PENDING` · `PROCESSING` · `DEEMED_APPROVED` · `COMPLETED` · `REFUNDED` ·
+`TRANSACTION_FAILED` · `UNKNOWN_ERROR` · `ACCOUNT_BLOCKED` · `ACCOUNT_CLOSED` ·
+`CREDIT_NOT_PERMITTED` · `DAILY_ACCOUNT_LIMIT_EXCEED` · `IMPS_NOT_SUPPORTED` ·
+`INVALID_ACCOUNT_NUMBER` · `INVALID_IFSC_CODE` · `INVALID_VPA` ·
+`INVALID_VPA_FORMAT` · `J&K_REGION_BLOCKED` · `NOT_COMPLIANT` · `NRE_ACCOUNT` ·
+`PROVIDER_ISSUE`
+
+<Callout type="info">
+Treat callbacks as triggers — see [Best practices](/getting-started/best-practices).
+The status returned from this endpoint is the source of truth for a payout.
+</Callout>

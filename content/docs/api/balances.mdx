@@ -1,0 +1,75 @@
+---
+title: Balances
+description: Fetch fiat and crypto balances across the account.
+---
+
+## Get account balances
+
+**GET** <code><ApiUrl env="production" />/account/balances</code>
+
+Retrieves account balance information. By default this endpoint returns balances
+for **all currencies**.
+
+### Single-currency lookup
+
+Append a currency code to the path to fetch a single balance:
+
+```
+GET /account/balances/inr
+```
+
+### Path parameters
+
+| Parameter  | Type   | Notes                                                                |
+| ---------- | ------ | -------------------------------------------------------------------- |
+| `currency` | string | Optional. Currency code (for example, `inr`, `usdt`).                |
+
+### Responses
+
+| Code  | Meaning                                       |
+| ----- | --------------------------------------------- |
+| `200` | Balance information retrieved successfully.   |
+| `404` | Currency not found (single-currency lookup).  |
+
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="GET /account/balances"
+[
+  {
+    "currency": "inr",
+    "balance": "15000.50",
+    "locked": "2000.00",
+    "escrow": "500.00",
+    "wallet_type": "fiat"
+  },
+  {
+    "currency": "usdt",
+    "balance": "250.00",
+    "locked": "0.00",
+    "escrow": "0.00",
+    "wallet_type": "crypto"
+  }
+]
+```
+
+```json title="GET /account/balances/inr"
+{
+  "currency": "inr",
+  "balance": "15000.50",
+  "locked": "2000.00",
+  "escrow": "500.00",
+  "wallet_type": "fiat"
+}
+```
+
+</div>
+
+#### Response fields — `BalanceResponse`
+
+| Field         | Type   | Description                                                              |
+| ------------- | ------ | ------------------------------------------------------------------------ |
+| `currency`    | string | Currency code (for example, `inr`, `usdt`).                              |
+| `balance`     | string | Total balance held for this currency (string-encoded number).            |
+| `locked`      | string | Portion of the balance committed to in-flight payouts.                   |
+| `escrow`      | string | Portion held in escrow against pending settlement.                       |
+| `wallet_type` | string | `fiat` or `crypto`.                                                      |

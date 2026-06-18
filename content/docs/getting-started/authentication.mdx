@@ -1,0 +1,91 @@
+---
+title: Authentication
+description: Sign every request with your access key, a nonce, and an HMAC SHA256 signature.
+---
+
+Authentication is required for all **private APIs** and is performed using API
+credentials — an **access key** and **secret key**. Public APIs do not require
+authentication.
+
+## How to retrieve API keys
+
+<Steps>
+<Step>
+### Sign in to your account
+
+Sign in to the <DashboardLink>merchant dashboard</DashboardLink>.
+</Step>
+
+<Step>
+### Enable Two-Factor Authentication
+
+Navigate to **Dashboard → Settings → Security** and turn on 2FA.
+
+<Callout type="warn">
+2FA must be enabled before generating or managing API keys.
+</Callout>
+</Step>
+
+<Step>
+### Generate keys
+
+Go to **Settings → API** to view or generate a new key pair. The secret key is
+shown once — store it in a secret manager (AWS Secrets Manager, GCP Secret
+Manager, Doppler, Vault).
+</Step>
+</Steps>
+
+## Required headers (private APIs)
+
+Every authenticated request must include the following headers:
+
+```
+X-Auth-Apikey
+X-Auth-Nonce
+X-Auth-Signature
+Content-Type: application/json
+```
+
+## Generating the signature
+
+For every request, generate a fresh **nonce** (millisecond timestamp) and an
+HMAC SHA256 **signature** of `nonce + accessKey`, keyed with your secret.
+
+<Callout type="info">
+Code samples below use `https://api.example.com` as a placeholder — replace it
+with the base URL for your environment. The real base URLs are listed in
+[Environments](/#environments).
+</Callout>
+
+```js title="sign.js"
+import CryptoJS from "crypto-js";
+
+const nonce = Date.now().toString();
+
+const accessKey = "your-access-key-here";
+const secretKey = "your-secret-key-here";
+
+const sigString = nonce + accessKey;
+const signature = CryptoJS
+  .HmacSHA256(sigString, secretKey)
+  .toString();
+
+fetch("https://api.example.com/uapi/v1/peatio/account/payouts/status", {
+  method: "GET",
+  headers: {
+    "X-Auth-Apikey": accessKey,
+    "X-Auth-Nonce": nonce,
+    "X-Auth-Signature": signature,
+    "Content-Type": "application/json"
+  }
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+```
+
+<Callout type="warn">
+**Security notice.** Your API keys grant significant access. Never expose your
+secret key in client-side code, public repositories, or shared environments.
+Rotate keys periodically and on any personnel change.
+</Callout>

@@ -1,0 +1,39 @@
+---
+title: Introduction
+description: Integrate the {{BRAND}} payment gateway — payouts, beneficiaries, balances, and OTC orders.
+---
+
+The <Brand /> payment gateway lets you securely integrate payment processing into
+your application using an **Access Key** and **Secret Key**. This enables seamless
+online payments, beneficiary management, fiat balances and OTC FX directly from
+your platform.
+
+To access these APIs you must have an **active access key and secret key**, issued
+through the <DashboardLink>merchant dashboard</DashboardLink>.
+
+## Quickstart
+
+<Cards>
+  <Card href="/getting-started/authentication" title="Authentication">
+    HMAC SHA256 request signing with your access key, nonce, and secret.
+  </Card>
+  <Card href="/getting-started/http-codes" title="HTTP status codes">
+    Standard codes returned across every endpoint, with their meaning.
+  </Card>
+  <Card href="/api/payouts" title="Payouts">
+    Initiate bank or UPI payouts and track their lifecycle.
+  </Card>
+  <Card href="/api/otc" title="OTC quotes & orders">
+    Request FX prices and execute conversion orders.
+  </Card>
+</Cards>
+
+## Environments
+
+<Brand /> exposes two independent environments. They share the same API surface —
+point your client at sandbox while building, switch to production when you go live.
+
+| Environment | Base URL                       |
+| ----------- | ------------------------------ |
+| Sandbox     | <ApiUrl env="sandbox" />       |
+| Production  | <ApiUrl env="production" />    |

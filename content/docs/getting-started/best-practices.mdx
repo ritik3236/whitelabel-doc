@@ -1,0 +1,38 @@
+---
+title: Best practices
+description: Guidelines for building reliable integrations on top of {{BRAND}}.
+---
+
+### Do not rely on callbacks alone
+
+Callback responses should only be treated as **triggers**. They are not the
+source of truth. On every callback event, call the
+[Get Payout Status](/api/payouts#get-status) API to fetch the actual and final
+payout status.
+
+### Always use a unique order ID
+
+Each payout request must include a unique `client_reference_id`. This acts as an
+**idempotency key** to prevent duplicate payouts when retrying.
+
+### Implement periodic status checks
+
+Run a cron job (every 5 minutes is a good starting point) to sweep payout
+statuses. This ensures reliability if a callback event is missed or delayed.
+
+### Do not assume a payout has failed
+
+Temporary errors do not always mean failure. Always query payout status using
+the same `client_reference_id` before retrying.
+
+### Treat callbacks as triggers, not as truth
+
+Callbacks may be delayed or out of date. Always reconcile with the status API
+before acting on a callback payload.
+
+### Do not assume "no response" means failure
+
+Network or server issues may cause temporary outages. A payout should be
+considered failed **only** when the
+[Get Payout Status](/api/payouts#get-status) API returns a successful response
+with a `FAILED` status.

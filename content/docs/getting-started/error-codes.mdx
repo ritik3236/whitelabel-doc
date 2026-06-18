@@ -1,0 +1,24 @@
+---
+title: Error codes
+description: Machine-readable error codes returned by authentication and routing.
+---
+
+When an error occurs, <Brand /> returns a structured response with a
+machine-readable code plus a human-readable message.
+
+## Authentication errors
+
+| Code                       | Meaning                                                |
+| -------------------------- | ------------------------------------------------------ |
+| `authz.unexistent_apikey`  | The API key does not exist, was deleted, or is invalid. |
+| `authz.invalid_signature`  | The provided request signature is invalid.             |
+| `authz.apikey_not_active`  | The API key is inactive or disabled.                   |
+
+## Routing errors
+
+| Code  | Meaning                                                       |
+| ----- | ------------------------------------------------------------- |
+| `404` | The endpoint path does not exist or the URL is incorrect.     |
+
+See [HTTP status codes](/getting-started/http-codes) for the full list of HTTP
+codes returned by the API.

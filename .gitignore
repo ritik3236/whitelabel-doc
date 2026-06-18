@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.source/
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.claude/
+openapi/runtime.yaml

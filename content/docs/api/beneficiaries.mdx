@@ -1,0 +1,200 @@
+---
+title: Beneficiaries
+description: Register and verify payees before initiating a payout.
+---
+
+The Beneficiaries API registers a payment destination and verifies it before
+funds can be sent. Both **bank account** (verified via penny drop) and **UPI**
+beneficiaries are supported.
+
+## Create beneficiary (penny-drop verification)
+
+**POST** <code><ApiUrl env="production" />/account/beneficiaries/penny_drop</code>
+
+Request schema: **`BeneficiaryCreateRequest`**.
+
+Creates and verifies a bank-account or UPI beneficiary.
+
+- If `vpa` is provided, a **UPI beneficiary** is created and verified.
+- If `account_number` and `bank_ifsc_code` are provided, a **bank-account
+  beneficiary** is created and verified via penny drop.
+
+The penny-drop transfers a small amount to validate the account details. Once
+`verification_status` becomes `active`, payouts can be initiated for the
+beneficiary.
+
+### Request body
+
+| Field                     | Type    | Required | Description                                                                                |
+| ------------------------- | ------- | -------- | ------------------------------------------------------------------------------------------ |
+| `bank_currency`           | string  | yes      | Fiat currency code used by the bank (for example, `inr`).                                  |
+| `account_holder_name`     | string  | yes      | The name of the account holder.                                                            |
+| `bank_ifsc_code`          | string  | conditional | The IFSC code of the bank. Required together with `account_number` for bank accounts.    |
+| `account_number`          | string  | conditional | The account number. Required together with `bank_ifsc_code` for bank accounts.            |
+| `vpa`                     | string  | conditional | UPI ID of the beneficiary. Mutually exclusive with `account_number` and `bank_ifsc_code`. |
+| `sync_bank_verification`  | boolean | no       | When `true`, verification runs immediately. When omitted/false, verification batches.       |
+
+### Examples
+
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="Request — bank account"
+{
+  "bank_currency": "inr",
+  "bank_ifsc_code": "HDFC0000044",
+  "account_holder_name": "Jhon Doe",
+  "account_number": "1234567890",
+  "sync_bank_verification": true
+}
+```
+
+```json title="Response — 201 (pending)"
+[
+  {
+    "beneficiary_id": "WBID251224092108GMC9757E",
+    "bank_currency": "inr",
+    "bank_ifsc_code": "HDFC0000044",
+    "account_number": "1234567890",
+    "account_holder_name": "Jhon Doe",
+    "remark": "PENDING",
+    "status_code": "PENDING",
+    "status_message": "Verification Pending",
+    "verification_status": "inactive",
+    "verification_data_bank_ref_no": null,
+    "verification_data_bank_beneficiary_name": null,
+    "verification_data_bank_transaction_remark": "No Record Found",
+    "verification_data_bank_transaction_status": "NOT_FOUND"
+  }
+]
+```
+
+```json title="Request — UPI"
+{
+  "bank_currency": "inr",
+  "vpa": "user@okaxis",
+  "account_holder_name": "Jhon Doe"
+}
+```
+
+```json title="Response — 201 (verified synchronously)"
+[
+  {
+    "beneficiary_id": "WVID260302082955LD124BF6",
+    "bank_currency": "inr",
+    "vpa": "user@okaxis",
+    "account_holder_name": "Jhon Doe",
+    "remark": "VERIFIED",
+    "status_code": "VERIFIED",
+    "status_message": "Verification Completed",
+    "verification_status": "active",
+    "verification_data_bank_ref_no": null,
+    "verification_data_bank_beneficiary_name": "John Doe",
+    "verification_data_bank_transaction_remark": null,
+    "verification_data_bank_transaction_status": "VERIFIED"
+  }
+]
+```
+
+</div>
+
+### Responses
+
+| Code  | Meaning                                       |
+| ----- | --------------------------------------------- |
+| `201` | Beneficiary created; penny drop initiated.    |
+| `400` | Invalid request parameters.                   |
+| `401` | Unauthorized.                                 |
+
+#### Error response shape
+
+Both `400` and `401` return a single `error` field with a human-readable
+message.
+
+```json title="400 Invalid"
+{ "error": "Invalid beneficiary details" }
+```
+
+```json title="401 Unauthorized"
+{ "error": "Unauthorized" }
+```
+
+## Get beneficiary status
+
+**GET** <code><ApiUrl env="production" />/account/beneficiaries/status</code>
+
+Query beneficiary information by beneficiary ID, account number, or UPI ID. Once
+`verification_status` becomes `active`, payouts can be initiated.
+
+### Query parameters
+
+| Parameter         | Type    | Notes                                                                                                       |
+| ----------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| `beneficiary_id`  | string  | The unique identifier of the beneficiary.                                                                   |
+| `vpa`             | string  | UPI ID. Mutually exclusive with `account_number` and `bank_ifsc_code`.                                      |
+| `account_number`  | string  | Bank account number. Mutually exclusive with `vpa`.                                                          |
+| `bank_ifsc_code`  | string  | IFSC code. With `account_number`: exact match. Without: returns all records for the IFSC.                  |
+| `bank_currency`   | string  | Filter by fiat currency.                                                                                    |
+| `page`            | integer | Pagination — page number.                                                                                   |
+| `limit`           | integer | Pagination — page size.                                                                                     |
+| `ordering`        | string  | Sort direction: `asc` or `desc` (default `desc`).                                                           |
+| `order_by`        | string  | Sort field: `id`, `created_at`, `updated_at`.                                                               |
+| `range`           | string  | Date filter field: `created` or `updated` (default `created`).                                              |
+| `from` / `to`     | string  | ISO 8601 datetime bounds.                                                                                   |
+
+### Responses
+
+| Code  | Meaning                                            |
+| ----- | -------------------------------------------------- |
+| `200` | Beneficiary status retrieved successfully.         |
+
+### Response
+
+```json title="200 OK — bank account"
+[
+  {
+    "beneficiary_id": "WBID251224092108GMC9757E",
+    "bank_currency": "inr",
+    "bank_ifsc_code": "HDFC0000044",
+    "account_number": "1234567890",
+    "account_holder_name": "Jhon Doe",
+    "remark": "PENDING",
+    "status_code": "PENDING",
+    "status_message": "Verification Pending",
+    "verification_status": "inactive",
+    "verification_data_bank_ref_no": null,
+    "verification_data_bank_beneficiary_name": null,
+    "verification_data_bank_transaction_remark": "No Record Found",
+    "verification_data_bank_transaction_status": "NOT_FOUND"
+  }
+]
+```
+
+#### Response fields — `BeneficiaryResponse`
+
+| Field                                            | Type             | Description                                                                                            |
+| ------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| `beneficiary_id`                                 | string           | Unique identifier for the beneficiary.                                                                 |
+| `bank_currency`                                  | string           | Fiat currency.                                                                                         |
+| `bank_ifsc_code`                                 | string           | IFSC code (present for bank-account beneficiaries).                                                    |
+| `account_number`                                 | string           | Account number (present for bank-account beneficiaries).                                               |
+| `vpa`                                            | string           | UPI ID (present for UPI beneficiaries).                                                                |
+| `account_holder_name`                            | string           | Holder name as supplied on create.                                                                     |
+| `remark`                                         | string \| null   | Additional notes from the verification step.                                                           |
+| `status_code`                                    | enum string      | Internal sub-status. See [Beneficiary status codes](#beneficiary-status-codes) for the full enum.       |
+| `status_message`                                 | string           | Human-readable verification state.                                                                     |
+| `verification_status`                            | enum string      | Primary state. One of `processing`, `inactive`, `active`, `rejected`, `archived`. Payouts can be initiated only when `active`. |
+| `verification_data_bank_ref_no`                  | string \| null   | Bank reference number for the penny-drop transaction.                                                  |
+| `verification_data_bank_beneficiary_name`        | string \| null   | Beneficiary name returned by the bank.                                                                 |
+| `verification_data_bank_transaction_remark`      | enum string \| null | Bank remark after verification. One of `Transaction Successful`, `No Record Found`.                |
+| `verification_data_bank_transaction_status`      | enum string \| null | Bank-side transaction status. One of `PROCESSING`, `VERIFIED`, `NOT_FOUND`.                        |
+
+#### Beneficiary status codes
+
+`status_code` is one of the following values. Use `verification_status` for
+primary routing logic and `status_code` for finer-grained operational visibility.
+
+`PENDING` · `PROCESSING` · `VERIFIED` · `ACCOUNT_BLOCKED` · `ACCOUNT_CLOSED` ·
+`CREDIT_NOT_PERMITTED` · `DAILY_ACCOUNT_LIMIT_EXCEED` · `IMPS_NOT_SUPPORTED` ·
+`INVALID_ACCOUNT_NUMBER` · `INVALID_IFSC_CODE` · `INVALID_VPA` ·
+`INVALID_VPA_FORMAT` · `J&K_REGION_BLOCKED` · `NOT_COMPLIANT` · `NRE_ACCOUNT` ·
+`PROVIDER_ISSUE`

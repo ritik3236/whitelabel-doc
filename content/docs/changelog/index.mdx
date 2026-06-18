@@ -1,0 +1,95 @@
+---
+title: Changelog
+description: API releases in reverse chronological order.
+---
+
+Backward-compatible enhancements only — no breaking changes since the initial
+release.
+
+## 1.4.0 — UPI payment support for beneficiaries & payouts
+
+### Beneficiary management
+Added support for **UPI beneficiaries** to both Create and Get endpoints.
+Existing bank-account integrations require no changes.
+
+- `vpa` — create or filter by UPI ID (for example, `user@okaxis`).
+- `vpa` is mutually exclusive with `account_number` and `bank_ifsc_code`.
+
+### Payout initiation
+Added support for **UPI payouts** to the Create Payout endpoint. Existing
+bank-payout integrations require no changes.
+
+- `vpa` — initiate a payout to a UPI ID.
+- `vpa` is mutually exclusive with `account_number` and `bank_ifsc_code`.
+- `account_number` and `bank_ifsc_code` must be provided together or not at all.
+- At least one of `vpa` or `account_number` must be provided.
+
+## 1.3.0 — Enhancements & new filters
+
+### Payout filters
+New query parameters for better transaction traceability:
+
+- `bank_transaction_id` — filter payouts using the bank-assigned transaction ID.
+- `bank_currency` — filter payouts by fiat currency.
+
+### Payout creation
+Optional bank-account verification:
+
+- `penny_drop_required` (boolean, default `true`) — whether a penny-drop
+  verification runs before processing the payout.
+
+### OTC quote API
+- `quote_id` — retrieve or filter using the unique quote identifier.
+
+## 1.2.0 — Flexible date-range filtering
+
+You can now filter list endpoints by date range using:
+
+- `range` — selects the date field (`created` or `updated`, default `created`).
+- `from` — start datetime (ISO 8601).
+- `to` — end datetime (ISO 8601).
+
+Example:
+
+```
+/payouts?range=created&from=2025-09-30T00:00:00Z&to=2025-09-30T23:59:59Z
+```
+
+If only `from` is provided, results from that time onward are returned. If only
+`to` is provided, results up to that time are returned.
+
+## 1.1.1 — Beneficiary IFSC filter support
+
+*Released 23 Feb 2026.*
+
+The Beneficiary GET endpoint now accepts `bank_ifsc_code`.
+
+- With `account_number`: returns the exact match for `account_number + bank_ifsc_code`.
+- Without `account_number`: returns all records matching the IFSC code.
+
+Backward-compatible — does not modify existing response structures.
+
+## 1.1.0 — Historical order enhancements
+
+*Released 20 Feb 2026.*
+
+GET endpoints (Payout, Beneficiary, OTC) now support:
+
+- Pagination — `page`, `limit`.
+- Sorting — `order_by` (`id`, `created_at`, `updated_at`), `ordering` (`asc`, `desc`, default `desc`).
+
+Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page`.
+
+## 1.0.0 — Initial release
+
+First stable release of the <Brand /> Payment Gateway API. Includes:
+
+- Payout initiation API
+- Beneficiary management API
+- Balance API
+- OTC API
+- HMAC SHA256 authentication
+- Callback integration with signature verification
+
+This version establishes the base contract for all future backward-compatible
+enhancements.
