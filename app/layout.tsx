@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: { default: brand.name, template: `%s | ${brand.name}` },
   description: `${brand.company} API documentation`,
-  metadataBase: new URL(brand.siteUrl),
 };
 
 export default function Layout({ children }: LayoutProps<'/'>) {

@@ -20,16 +20,6 @@ function ApiUrl({ env: target = 'production' }: { env?: 'sandbox' | 'production'
   return <>{url}</>;
 }
 
-/** Inline the support email as a mailto link. */
-function SupportEmail() {
-  return <a href={`mailto:${contact.email}`}>{contact.email}</a>;
-}
-
-/** Inline a link to the support site. */
-function SupportLink({ children }: { children?: React.ReactNode }) {
-  return <a href={contact.url}>{children ?? contact.url}</a>;
-}
-
 /** Wrap link text into an anchor pointing at the merchant dashboard. */
 function DashboardLink({ children }: { children: React.ReactNode }) {
   return <a href={contact.dashboard}>{children}</a>;
@@ -39,8 +29,6 @@ const tenantComponents = {
   Brand,
   Company,
   ApiUrl,
-  SupportEmail,
-  SupportLink,
   DashboardLink,
 } satisfies MDXComponents;
 
