@@ -6,6 +6,27 @@ description: API releases in reverse chronological order.
 Backward-compatible enhancements only — no breaking changes since the initial
 release.
 
+## 1.4.1 — Documentation corrections
+
+No API behaviour changed in this release — the backend already worked this way.
+These entries bring the spec in line with what the API has been returning all
+along.
+
+### OTC quote & order
+- `req_currency` is now documented on `POST /market/otc_quotes/new` and
+  `POST /market/otc_orders` (request) and on the quote response. It names the
+  currency that `req_amount` / `amount` is denominated in (typically the fiat
+  side of the market, e.g. `inr` for `usdtinr`).
+
+### Payouts
+- `completed_at` documented as **integer** (milliseconds since epoch), matching
+  `created_at`'s shape. The spec previously declared it as an ISO 8601 string;
+  the API has always returned a millisecond integer.
+
+### Beneficiaries
+- Added `FAILED` to the `verification_data_bank_transaction_status` enum (now
+  one of `PROCESSING`, `VERIFIED`, `NOT_FOUND`, `FAILED`).
+
 ## 1.4.0 — UPI payment support for beneficiaries & payouts
 
 ### Beneficiary management
