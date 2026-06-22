@@ -35,6 +35,8 @@ returned `payout_id`.
 | `vpa`                  | string  | conditional | UPI ID of the recipient. Mutually exclusive with `account_number` and `bank_ifsc_code`.      |
 | `sender_name`          | string  | no       | Name of the sender. Max 128 chars, alphabetic + spaces only — pattern `^[A-Za-z ]+$`.         |
 | `penny_drop_required`  | boolean | no       | Whether bank-account verification via penny drop should run before payout. Default `true`.    |
+| `otc_market`           | string  | no       | When provided with `otc_side`, the payout is funded by executing an OTC order on this market first. The executed order is embedded in the response under `otc_order`. |
+| `otc_side`             | enum string  | no  | OTC order side. Required when `otc_market` is set. Currently only `sell`.                |
 
 ### Examples
 
@@ -90,7 +92,62 @@ returned `payout_id`.
 }
 ```
 
+```json title="Request — OTC-funded sell (USDT → INR)"
+{
+  "client_reference_id": "TEST00006",
+  "bank_currency": "inr",
+  "amount": "862.1",
+  "account_holder_name": "Sender Name",
+  "account_number": "1234567890",
+  "bank_ifsc_code": "HDFC0000044",
+  "sender_name": "My Name",
+  "otc_market": "usdtinr",
+  "otc_side": "sell"
+}
+```
+
+```json title="Response — 201 Created (with otc_order)"
+{
+  "payout_id": "TID260622093449PPA73A980",
+  "bank_currency": "inr",
+  "beneficiary_id": "WBID250705030227PPB83096",
+  "client_reference_id": "TEST00006",
+  "amount": "862.1",
+  "fee": "0.0",
+  "payout_status": "processing",
+  "bank_transaction_id": null,
+  "remark": "PROCESSING",
+  "status_code": "PROCESSING",
+  "status_message": "Payout in Progress",
+  "sender_name": "MY NAME",
+  "created_at": 1782120889585,
+  "completed_at": null,
+  "otc_order": {
+    "order_id": "OOID260622090249PPCCFE9D",
+    "market": "usdtinr",
+    "client_reference_id": "TID260622093449PPA73A980",
+    "amount": "100.05",
+    "price": "86.21",
+    "fee": "0.0",
+    "fee_currency": "inr",
+    "tax": "0.0",
+    "tax_currency": "inr",
+    "side": "sell",
+    "order_status": "completed",
+    "created_at": 1782118969689
+  }
+}
+```
+
 </div>
+
+<Callout type="info">
+When `otc_market` + `otc_side` are provided, the payout is funded by an OTC
+order opened against `otc_market`. The embedded `otc_order.client_reference_id`
+is automatically populated with the generated `payout_id`, so you can correlate
+the two records. Omit both fields to settle from existing balance — in that
+case `otc_order` is not present in the response.
+</Callout>
 
 ### Responses
 
@@ -178,10 +235,12 @@ Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page
 | `payout_status`        | enum string      | Primary state — use this for routing logic. One of `processing`, `succeed`, `rejected`, `refunded`.                  |
 | `status_code`          | enum string      | Internal sub-status for operational tracking. Not the primary state — see [Payout status codes](#payout-status-codes) below for the full enum. |
 | `status_message`       | string           | Human-readable explanation of the current status.                                                                    |
+| `remark`               | string \| null   | Free-form note attached to the payout, typically mirroring `status_code` for in-flight payouts.                      |
 | `bank_transaction_id`  | string \| null   | Transaction reference assigned by the rail bank.                                                                     |
 | `sender_name`          | string \| null   | Sender name, if supplied on create.                                                                                  |
 | `created_at`           | integer          | Creation timestamp, milliseconds since epoch.                                                                        |
 | `completed_at`         | integer \| null  | Completion timestamp, milliseconds since epoch (same shape as `created_at`). `null` while in flight.                 |
+| `otc_order`            | object \| absent | Present only when the payout was funded by an OTC order (request supplied `otc_market` + `otc_side`). The embedded order follows the [OtcOrderResponse](/api/otc#response-fields--otcorderresponse) schema; its `client_reference_id` is the generated `payout_id`. |
 
 #### Payout status codes
 

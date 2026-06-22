@@ -6,6 +6,29 @@ description: API releases in reverse chronological order.
 Backward-compatible enhancements only — no breaking changes since the initial
 release.
 
+## 1.5.0 — OTC-funded payouts
+
+Create Payout (`POST /account/payouts/initiate`) now accepts an optional OTC
+funding leg. When both `otc_market` and `otc_side` are provided, the API opens
+an OTC order against that market to fund the payout in a single request; the
+executed order is returned alongside the payout under `otc_order`.
+
+### Request — new optional fields
+- `otc_market` — trading pair to open the OTC order on (e.g. `usdtinr`).
+- `otc_side` — OTC order side. Currently only `sell`. Required when
+  `otc_market` is set.
+
+### Response — additions
+- `otc_order` — embedded `OtcOrderResponse`, present only when the request
+  included `otc_market`/`otc_side`. Its `client_reference_id` is automatically
+  populated with the generated `payout_id` so the two records correlate
+  cleanly.
+- `remark` — free-form note attached to the payout, typically mirroring
+  `status_code` for in-flight payouts.
+
+Existing payout integrations need no changes — omit both `otc_market` and
+`otc_side` to settle from balance and the response shape is unchanged.
+
 ## 1.4.1 — Documentation corrections
 
 No API behaviour changed in this release — the backend already worked this way.
