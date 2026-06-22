@@ -18,15 +18,17 @@ and must be used before they expire.
 
 ### Request body
 
-| Field        | Type   | Required | Notes                                          |
-| ------------ | ------ | -------- | ---------------------------------------------- |
-| `req_amount` | string | yes      | Requested quote amount.                        |
-| `market`     | string | yes      | Trading pair (for example, `usdtinr`).         |
-| `side`       | string | yes      | Quote side — currently `sell` only.            |
+| Field          | Type   | Required | Notes                                                                              |
+| -------------- | ------ | -------- | ---------------------------------------------------------------------------------- |
+| `req_amount`   | string | yes      | Requested quote amount, denominated in `req_currency`.                             |
+| `req_currency` | string | yes      | Currency the `req_amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`). |
+| `market`       | string | yes      | Trading pair (for example, `usdtinr`).                                             |
+| `side`         | string | yes      | Quote side — currently `sell` only.                                                |
 
 ```json
 {
-  "req_amount": "500",
+  "req_amount": "8621",
+  "req_currency": "inr",
   "market": "usdtinr",
   "side": "sell"
 }
@@ -65,8 +67,9 @@ Retrieves the list of OTC quotes with their current state.
 | ----------------- | ---------------- | ------------------------------------------------------------------------------------------ |
 | `quote_id`        | string           | Unique quote identifier.                                                                   |
 | `market`          | string           | Trading pair (for example, `usdtinr`).                                                     |
-| `req_amount`      | string           | Amount originally requested.                                                               |
-| `allotted_amount` | string           | Amount the platform allotted for the quote.                                                |
+| `req_amount`      | string           | Amount originally requested, denominated in `req_currency`.                                |
+| `req_currency`    | string           | Currency the `req_amount` is denominated in.                                               |
+| `allotted_amount` | string           | Amount the platform allotted for the quote (in the opposite side of the market).           |
 | `avg_price`       | string           | Average execution price.                                                                   |
 | `side`            | enum string      | Quote side. Currently only `sell`.                                                         |
 | `quote_status`    | enum string      | Current state. One of `active`, `expired`, `consumed`.                                     |
@@ -156,19 +159,21 @@ guaranteed rate locked in.
 
 ### Request body
 
-| Field                 | Type   | Required | Notes                                            |
-| --------------------- | ------ | -------- | ------------------------------------------------ |
-| `market`              | string | yes      | Trading pair (for example, `usdtinr`).           |
-| `amount`              | string | yes      | Base-asset amount.                               |
-| `side`                | string | yes      | Order side — currently `sell` only.              |
-| `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).    |
+| Field                 | Type   | Required | Notes                                                                                |
+| --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
+| `market`              | string | yes      | Trading pair (for example, `usdtinr`).                                               |
+| `amount`              | string | yes      | Amount in the currency named by `req_currency`.                                      |
+| `req_currency`        | string | yes      | Currency the `amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`).     |
+| `side`                | string | yes      | Order side — currently `sell` only.                                                  |
+| `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).                                        |
 
 ```json
 {
+  "amount": "8625",
+  "req_currency": "inr",
   "market": "usdtinr",
-  "amount": "100.0",
   "side": "sell",
-  "client_reference_id": "TEST1234560"
+  "client_reference_id": "TEST00004"
 }
 ```
 
