@@ -18,19 +18,21 @@ and must be used before they expire.
 
 ### Request body
 
-| Field          | Type   | Required | Notes                                                                              |
-| -------------- | ------ | -------- | ---------------------------------------------------------------------------------- |
-| `req_amount`   | string | yes      | Requested quote amount, denominated in `req_currency`.                             |
-| `req_currency` | string | yes      | Currency the `req_amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`). |
-| `market`       | string | yes      | Trading pair (for example, `usdtinr`).                                             |
-| `side`         | string | yes      | Quote side — currently `sell` only.                                                |
+| Field                 | Type   | Required | Notes                                                                                |
+| --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
+| `req_amount`          | string | yes      | Requested quote amount, denominated in `req_currency`.                               |
+| `req_currency`        | string | yes      | Currency the `req_amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`). |
+| `market`              | string | yes      | Trading pair (for example, `usdtinr`).                                               |
+| `side`                | string | yes      | Quote side — currently `sell` only.                                                  |
+| `client_reference_id` | string | no       | Optional your-side reference. Echoed back on the quote and on orders placed against it. |
 
 ```json
 {
   "req_amount": "8621",
   "req_currency": "inr",
   "market": "usdtinr",
-  "side": "sell"
+  "side": "sell",
+  "client_reference_id": "QUOTE-TEST-001"
 }
 ```
 
@@ -63,11 +65,12 @@ Retrieves the list of OTC quotes with their current state.
 
 ### Response fields — `OtcQuoteResponse`
 
-| Field             | Type             | Description                                                                                |
-| ----------------- | ---------------- | ------------------------------------------------------------------------------------------ |
-| `quote_id`        | string           | Unique quote identifier.                                                                   |
-| `market`          | string           | Trading pair (for example, `usdtinr`).                                                     |
-| `req_amount`      | string           | Amount originally requested, denominated in `req_currency`.                                |
+| Field                 | Type             | Description                                                                                |
+| --------------------- | ---------------- | ------------------------------------------------------------------------------------------ |
+| `quote_id`            | string           | Unique quote identifier.                                                                   |
+| `client_reference_id` | string \| null   | Client reference supplied on create, if any.                                               |
+| `market`              | string           | Trading pair (for example, `usdtinr`).                                                     |
+| `req_amount`          | string           | Amount originally requested, denominated in `req_currency`.                                |
 | `req_currency`    | string           | Currency the `req_amount` is denominated in.                                               |
 | `allotted_amount` | string           | Amount the platform allotted for the quote (in the opposite side of the market).           |
 | `avg_price`       | string           | Average execution price.                                                                   |
@@ -91,6 +94,18 @@ since the quote was issued.
 | Parameter   | Type    | Required | Notes                                              |
 | ----------- | ------- | -------- | -------------------------------------------------- |
 | `quote_id`  | string  | yes      | The quote ID, for example `OQID260101143053GM990BB3`. |
+
+### Request body (optional)
+
+| Field                 | Type   | Required | Notes                                                                                |
+| --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
+| `client_reference_id` | string | no       | Optional reference for the order being created. If omitted, the order inherits the quote's `client_reference_id` (when set), otherwise the platform generates one. |
+
+```json
+{
+  "client_reference_id": "ORDER-TEST-001"
+}
+```
 
 ### Responses
 

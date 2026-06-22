@@ -6,6 +6,22 @@ description: API releases in reverse chronological order.
 Backward-compatible enhancements only — no breaking changes since the initial
 release.
 
+## 1.6.0 — `client_reference_id` on OTC quote & conversion order
+
+OTC quote and the "place order from quote" endpoint now accept an optional
+`client_reference_id`, so you can correlate your own ledger entries with both
+the quote and the order it converts into.
+
+- `POST /market/otc_quotes/new` — request gains optional `client_reference_id`
+  (max 64 chars). Echoed back on the quote.
+- `OtcQuoteResponse` — gains `client_reference_id` field (nullable).
+- `PATCH /market/otc_quotes/place_order/{quote_id}` — request body is now
+  accepted (still optional) and can carry `client_reference_id` for the order
+  created from the quote. If omitted, the order inherits the quote's reference
+  (when set), otherwise the platform generates one.
+
+Existing integrations keep working unchanged — both fields are optional.
+
 ## 1.5.0 — OTC-funded payouts
 
 Create Payout (`POST /account/payouts/initiate`) now accepts an optional OTC
