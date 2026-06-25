@@ -6,6 +6,25 @@ description: API releases in reverse chronological order.
 Backward-compatible enhancements only — no breaking changes since the initial
 release.
 
+## 1.6.1 — Error code documentation
+
+Documented the `errors` array responses across Payout, OTC Quote, and OTC
+Place Order with the machine-readable codes the API has been returning:
+
+- `account.payout.duplicate_reference_id_#<id>` — duplicate
+  `client_reference_id` on Create Payout.
+- `market.otc_quote.duplicate_reference_id_#<id>` — duplicate
+  `client_reference_id` on Create OTC Quote.
+- `market.otc_quote.not_found` — `quote_id` is unknown (Place OTC Order +
+  propagated through Create Payout when `otc_quote_id` is set).
+- `market.otc_quote.amount_mismatch` — quote amount no longer matches
+  (Create Payout only, when the quote drifts between create and execution).
+- `market.otc_quote.expired` — quote is past expiry (Place OTC Order +
+  propagated through Create Payout when `otc_quote_id` is set).
+
+Payout `400` / `401` responses now use the standard `errors: [...]` array
+shape rather than the older singular `error: "..."` field.
+
 ## 1.6.0 — `client_reference_id` on OTC quote & conversion order
 
 OTC quote and the "place order from quote" endpoint now accept an optional
@@ -25,25 +44,22 @@ Existing integrations keep working unchanged — both fields are optional.
 ## 1.5.0 — OTC-funded payouts
 
 Create Payout (`POST /account/payouts/initiate`) now accepts an optional OTC
-funding leg. When both `otc_market` and `otc_side` are provided, the API opens
-an OTC order against that market to fund the payout in a single request; the
+funding leg. When `otc_quote_id` is provided, the API places an order against
+that previously-created OTC quote to fund the payout in a single request; the
 executed order is returned alongside the payout under `otc_order`.
 
-### Request — new optional fields
-- `otc_market` — trading pair to open the OTC order on (e.g. `usdtinr`).
-- `otc_side` — OTC order side. Currently only `sell`. Required when
-  `otc_market` is set.
+### Request — new optional field
+- `otc_quote_id` — ID of an active OTC quote (created via
+  `POST /market/otc_quotes/new`) to fund the payout from. Omit to settle from
+  existing balance.
 
 ### Response — additions
 - `otc_order` — embedded `OtcOrderResponse`, present only when the request
-  included `otc_market`/`otc_side`. Its `client_reference_id` is automatically
+  included `otc_quote_id`. Its `client_reference_id` is automatically
   populated with the generated `payout_id` so the two records correlate
   cleanly.
 - `remark` — free-form note attached to the payout, typically mirroring
   `status_code` for in-flight payouts.
-
-Existing payout integrations need no changes — omit both `otc_market` and
-`otc_side` to settle from balance and the response shape is unchanged.
 
 ## 1.4.1 — Documentation corrections
 

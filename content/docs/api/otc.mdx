@@ -41,9 +41,19 @@ and must be used before they expire.
 | Code  | Meaning                          |
 | ----- | -------------------------------- |
 | `200` | OTC quote created successfully.  |
+| `400` | Invalid request.                 |
 
-The response body uses the **`OtcQuoteResponse`** schema — see field table under
-[Get OTC quote status](#get-otc-quote-status).
+The 200 response body uses the **`OtcQuoteResponse`** schema — see field table
+under [Get OTC quote status](#get-otc-quote-status).
+
+#### 400 error codes
+
+- `market.otc_quote.duplicate_reference_id_#<client_reference_id>` — a quote
+  with that `client_reference_id` already exists.
+
+```json title="400 Duplicate reference"
+{ "errors": ["market.otc_quote.duplicate_reference_id_#TEST-00X-3"] }
+```
 
 ## Get OTC quote status
 
@@ -114,18 +124,19 @@ since the quote was issued.
 | `200` | OTC order placed successfully.   |
 | `400` | Quote error (expired or stale).  |
 
-#### 400 error shape
+#### 400 error codes
 
-`400` returns an `errors` array of error codes — typically `market.otc_quote.expired`
-or `market.otc_quote.amount_updated`.
+`400` returns an `errors` array of machine-readable codes:
 
-```json title="400 Quote error"
-{
-  "errors": [
-    "market.otc_quote.expired",
-    "market.otc_quote.amount_updated"
-  ]
-}
+- `market.otc_quote.not_found` — `quote_id` doesn't match any quote.
+- `market.otc_quote.expired` — quote is past its expiry timestamp.
+
+```json title="400 Quote not found"
+{ "errors": ["market.otc_quote.not_found"] }
+```
+
+```json title="400 Quote expired"
+{ "errors": ["market.otc_quote.expired"] }
 ```
 
 ## Get OTC orders

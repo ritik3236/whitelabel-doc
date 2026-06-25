@@ -70,7 +70,7 @@ const signature = CryptoJS
   .HmacSHA256(sigString, secretKey)
   .toString();
 
-fetch("https://api.example.com/uapi/v1/peatio/account/payouts/status", {
+fetch("https://api.example.com/uapi/v1/peatio/account/balances/inr", {
   method: "GET",
   headers: {
     "X-Auth-Apikey": accessKey,
