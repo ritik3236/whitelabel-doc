@@ -21,7 +21,7 @@ and must be used before they expire.
 | Field                 | Type   | Required | Notes                                                                                |
 | --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
 | `req_amount`          | string | yes      | Requested quote amount, denominated in `req_currency`.                               |
-| `req_currency`        | string | yes      | Currency the `req_amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`). |
+| `req_currency`        | string | no       | Currency the `req_amount` is in. Optional — defaults to the market's base currency (e.g. `usdt` for `usdtinr`) when omitted. Typically set to the fiat side (e.g. `inr`). |
 | `market`              | string | yes      | Trading pair (for example, `usdtinr`).                                               |
 | `side`                | string | yes      | Quote side — currently `sell` only.                                                  |
 | `client_reference_id` | string | no       | Optional your-side reference. Echoed back on the quote and on orders placed against it. |
@@ -38,7 +38,7 @@ and must be used before they expire.
 }
 ```
 
-```json title="Response — 200 OK"
+```json title="Response — 201 Created"
 {
   "quote_id": "OQID260101143053GM990BB3",
   "market": "usdtinr",
@@ -62,19 +62,19 @@ and must be used before they expire.
 
 | Code  | Meaning                          |
 | ----- | -------------------------------- |
-| `200` | OTC quote created successfully.  |
-| `400` | Invalid request.                 |
+| `201` | OTC quote created successfully.  |
+| `422` | Invalid request or duplicate reference. |
 
-The 200 response body uses the **`OtcQuoteResponse`** schema — see field table
+The 201 response body uses the **`OtcQuoteResponse`** schema — see field table
 under [Get OTC quote status](#get-otc-quote-status). A freshly created quote is
 `active` with an empty `otc_orders` array until an order is placed against it.
 
-#### 400 error codes
+#### 422 error codes
 
 - `market.otc_quote.duplicate_reference_id_#<client_reference_id>` — a quote
   with that `client_reference_id` already exists.
 
-```json title="400 Duplicate reference"
+```json title="422 Duplicate reference"
 { "errors": ["market.otc_quote.duplicate_reference_id_#TEST-00X-3"] }
 ```
 
@@ -181,20 +181,20 @@ bare order object.
 | Code  | Meaning                          |
 | ----- | -------------------------------- |
 | `200` | OTC order placed successfully.   |
-| `400` | Quote error (expired or stale).  |
+| `422` | Quote error (expired or stale).  |
 
-#### 400 error codes
+#### 422 error codes
 
-`400` returns an `errors` array of machine-readable codes:
+`422` returns an `errors` array of machine-readable codes:
 
-- `market.otc_quote.not_found` — `quote_id` doesn't match any quote.
+- `market.otc_quote.cannot_place_order` — the `quote_id` doesn't match any quote (or the order can't be placed against it).
 - `market.otc_quote.expired` — quote is past its expiry timestamp.
 
-```json title="400 Quote not found"
-{ "errors": ["market.otc_quote.not_found"] }
+```json title="422 Cannot place order"
+{ "errors": ["market.otc_quote.cannot_place_order"] }
 ```
 
-```json title="400 Quote expired"
+```json title="422 Quote expired"
 { "errors": ["market.otc_quote.expired"] }
 ```
 
@@ -248,7 +248,7 @@ guaranteed rate locked in.
 | --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
 | `market`              | string | yes      | Trading pair (for example, `usdtinr`).                                               |
 | `amount`              | string | yes      | Amount in the currency named by `req_currency`.                                      |
-| `req_currency`        | string | yes      | Currency the `amount` is in. Typically the fiat side (e.g. `inr` for `usdtinr`).     |
+| `req_currency`        | string | no       | Currency the `amount` is in. Optional — defaults to the market's base currency (e.g. `usdt` for `usdtinr`) when omitted. Typically set to the fiat side (e.g. `inr`). |
 | `side`                | string | yes      | Order side — currently `sell` only.                                                  |
 | `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).                                        |
 
@@ -264,7 +264,7 @@ guaranteed rate locked in.
 }
 ```
 
-```json title="Response — 200 OK (array)"
+```json title="Response — 201 Created (array)"
 [
   {
     "order_id": "OOID260101143512GMB47A21",
@@ -289,7 +289,7 @@ guaranteed rate locked in.
 
 | Code  | Meaning                          |
 | ----- | -------------------------------- |
-| `200` | OTC order created successfully.  |
+| `201` | OTC order created successfully.  |
 
 Unlike the quote flow, this endpoint returns an **array** of
 [`OtcOrderResponse`](#response-fields--otcorderresponse) objects.

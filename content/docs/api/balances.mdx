@@ -29,7 +29,7 @@ GET /account/balances/inr
 | Code  | Meaning                                       |
 | ----- | --------------------------------------------- |
 | `200` | Balance information retrieved successfully.   |
-| `404` | Currency not found (single-currency lookup).  |
+| `422` | Currency not found (single-currency lookup).  |
 
 <div className="grid gap-4 lg:grid-cols-2">
 
@@ -40,14 +40,14 @@ GET /account/balances/inr
     "balance": "15000.50",
     "locked": "2000.00",
     "escrow": "500.00",
-    "wallet_type": "fiat"
+    "wallet_type": "spot"
   },
   {
     "currency": "usdt",
     "balance": "250.00",
     "locked": "0.00",
     "escrow": "0.00",
-    "wallet_type": "crypto"
+    "wallet_type": "spot"
   }
 ]
 ```
@@ -58,7 +58,7 @@ GET /account/balances/inr
   "balance": "15000.50",
   "locked": "2000.00",
   "escrow": "500.00",
-  "wallet_type": "fiat"
+  "wallet_type": "spot"
 }
 ```
 
@@ -72,4 +72,4 @@ GET /account/balances/inr
 | `balance`     | string | Total balance held for this currency (string-encoded number).            |
 | `locked`      | string | Portion of the balance committed to in-flight payouts.                   |
 | `escrow`      | string | Portion held in escrow against pending settlement.                       |
-| `wallet_type` | string | `fiat` or `crypto`.                                                      |
+| `wallet_type` | string | Wallet type — currently `spot` for all currencies.                       |

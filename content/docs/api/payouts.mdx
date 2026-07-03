@@ -33,7 +33,7 @@ returned `payout_id`.
 | `bank_ifsc_code`       | string  | conditional | Bank IFSC / SWIFT code. Required together with `account_number` for bank payouts.          |
 | `account_number`       | string  | conditional | Bank account number. Required together with `bank_ifsc_code` for bank payouts.             |
 | `vpa`                  | string  | conditional | UPI ID of the recipient. Mutually exclusive with `account_number` and `bank_ifsc_code`.      |
-| `sender_name`          | string  | no       | Name of the sender. Max 128 chars, alphabetic + spaces only — pattern `^[A-Za-z ]+$`.         |
+| `sender_name`          | string  | no       | Name of the sender. Max 128 chars. Only letters and spaces are kept — any non-`[A-Za-z ]` characters (digits, punctuation) are **stripped server-side**, so send an alphabetic name to avoid surprises. |
 | `penny_drop_required`  | boolean | no       | Whether bank-account verification via penny drop should run before payout. Default `true`.    |
 | `otc_quote_id`         | string  | no       | When set, the payout is funded by placing an order against this previously-created OTC quote (`POST /market/otc_quotes/new`). The resulting order is embedded in the response under `otc_order`. Omit to settle from existing balance. |
 
@@ -150,33 +150,34 @@ response.
 
 ### Responses
 
-| Code  | Meaning                       |
-| ----- | ----------------------------- |
-| `201` | Payout created successfully.  |
-| `400` | Invalid request parameters.   |
-| `401` | Unauthorized.                 |
+| Code  | Meaning                                                  |
+| ----- | -------------------------------------------------------- |
+| `201` | Payout created successfully.                             |
+| `400` | Invalid request syntax.                                  |
+| `401` | Unauthorized.                                            |
+| `422` | Validation error, duplicate reference, or OTC-quote error. |
 
 #### Error response shape
 
-Both `400` and `401` return an `errors` array of machine-readable codes.
+Error responses return an `errors` array of machine-readable codes.
 
-**`400` codes specific to this endpoint:**
+**`422` codes specific to this endpoint:**
 
 - `account.payout.duplicate_reference_id_#<client_reference_id>` — a payout
   with that `client_reference_id` already exists.
 
 When the request includes `otc_quote_id`, errors from the OTC quote system
-propagate through:
+propagate through (also as `422`):
 
 - `market.otc_quote.not_found` — `otc_quote_id` doesn't match any quote.
 - `market.otc_quote.amount_mismatch` — quote amount no longer matches.
 - `market.otc_quote.expired` — quote is past its expiry.
 
-```json title="400 Duplicate reference"
+```json title="422 Duplicate reference"
 { "errors": ["account.payout.duplicate_reference_id_#BIGBULL0010"] }
 ```
 
-```json title="400 OTC quote expired (propagated)"
+```json title="422 OTC quote expired (propagated)"
 { "errors": ["market.otc_quote.expired"] }
 ```
 
