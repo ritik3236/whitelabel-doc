@@ -26,7 +26,9 @@ and must be used before they expire.
 | `side`                | string | yes      | Quote side — currently `sell` only.                                                  |
 | `client_reference_id` | string | no       | Optional your-side reference. Echoed back on the quote and on orders placed against it. |
 
-```json
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="Request"
 {
   "req_amount": "8621",
   "req_currency": "inr",
@@ -36,6 +38,26 @@ and must be used before they expire.
 }
 ```
 
+```json title="Response — 200 OK"
+{
+  "quote_id": "OQID260101143053GM990BB3",
+  "market": "usdtinr",
+  "client_reference_id": "QUOTE-TEST-001",
+  "req_amount": "8621.0",
+  "req_currency": "inr",
+  "allotted_amount": "100.05",
+  "avg_price": "86.17",
+  "side": "sell",
+  "quote_status": "active",
+  "remark": null,
+  "otc_orders": [],
+  "created_at": 1766570103137,
+  "expired_at": 1766570703000
+}
+```
+
+</div>
+
 ### Responses
 
 | Code  | Meaning                          |
@@ -44,7 +66,8 @@ and must be used before they expire.
 | `400` | Invalid request.                 |
 
 The 200 response body uses the **`OtcQuoteResponse`** schema — see field table
-under [Get OTC quote status](#get-otc-quote-status).
+under [Get OTC quote status](#get-otc-quote-status). A freshly created quote is
+`active` with an empty `otc_orders` array until an order is placed against it.
 
 #### 400 error codes
 
@@ -111,11 +134,47 @@ since the quote was issued.
 | --------------------- | ------ | -------- | ------------------------------------------------------------------------------------ |
 | `client_reference_id` | string | no       | Optional reference for the order being created. If omitted, the order inherits the quote's `client_reference_id` (when set), otherwise the platform generates one. |
 
-```json
+A successful call returns the **updated quote** (`OtcQuoteResponse`) — now
+`consumed` — with the created order embedded under `otc_orders`, rather than a
+bare order object.
+
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="Request (optional body)"
 {
   "client_reference_id": "ORDER-TEST-001"
 }
 ```
+
+```json title="Response — 200 OK"
+{
+  "quote_id": "OQID260101143053GM990BB3",
+  "market": "usdtinr",
+  "client_reference_id": "QUOTE-TEST-001",
+  "req_amount": "8621.0",
+  "req_currency": "inr",
+  "allotted_amount": "100.05",
+  "avg_price": "86.17",
+  "side": "sell",
+  "quote_status": "consumed",
+  "remark": null,
+  "otc_orders": [
+    {
+      "order_id": "OOID260101143512GMB47A21",
+      "market": "usdtinr",
+      "client_reference_id": "ORDER-TEST-001",
+      "amount": "100.05",
+      "price": "86.20",
+      "order_status": "completed",
+      "created_at": 1766570103137
+    }
+  ],
+  "created_at": 1766570103137,
+  "expired_at": 1766570703000
+}
+```
+
+</div>
 
 ### Responses
 
@@ -193,7 +252,9 @@ guaranteed rate locked in.
 | `side`                | string | yes      | Order side — currently `sell` only.                                                  |
 | `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).                                        |
 
-```json
+<div className="grid gap-4 lg:grid-cols-2">
+
+```json title="Request"
 {
   "amount": "8625",
   "req_currency": "inr",
@@ -203,8 +264,32 @@ guaranteed rate locked in.
 }
 ```
 
+```json title="Response — 200 OK (array)"
+[
+  {
+    "order_id": "OOID260101143512GMB47A21",
+    "market": "usdtinr",
+    "client_reference_id": "TEST00004",
+    "amount": "100.05",
+    "price": "86.20",
+    "fee": "0.0",
+    "fee_currency": "inr",
+    "tax": "0.0",
+    "tax_currency": "inr",
+    "side": "sell",
+    "order_status": "completed",
+    "created_at": 1766570103137
+  }
+]
+```
+
+</div>
+
 ### Responses
 
 | Code  | Meaning                          |
 | ----- | -------------------------------- |
 | `200` | OTC order created successfully.  |
+
+Unlike the quote flow, this endpoint returns an **array** of
+[`OtcOrderResponse`](#response-fields--otcorderresponse) objects.

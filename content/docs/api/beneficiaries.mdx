@@ -49,23 +49,21 @@ beneficiary.
 ```
 
 ```json title="Response — 201 (pending)"
-[
-  {
-    "beneficiary_id": "WBID251224092108GMC9757E",
-    "bank_currency": "inr",
-    "bank_ifsc_code": "HDFC0000044",
-    "account_number": "1234567890",
-    "account_holder_name": "Jhon Doe",
-    "remark": "PENDING",
-    "status_code": "PENDING",
-    "status_message": "Verification Pending",
-    "verification_status": "inactive",
-    "verification_data_bank_ref_no": null,
-    "verification_data_bank_beneficiary_name": null,
-    "verification_data_bank_transaction_remark": "No Record Found",
-    "verification_data_bank_transaction_status": "NOT_FOUND"
-  }
-]
+{
+  "beneficiary_id": "WBID251224092108GMC9757E",
+  "bank_currency": "inr",
+  "bank_ifsc_code": "HDFC0000044",
+  "account_number": "1234567890",
+  "account_holder_name": "Jhon Doe",
+  "remark": "PENDING",
+  "status_code": "PENDING",
+  "status_message": "Verification Pending",
+  "verification_status": "inactive",
+  "verification_data_bank_ref_no": null,
+  "verification_data_bank_beneficiary_name": null,
+  "verification_data_bank_transaction_remark": "No Record Found",
+  "verification_data_bank_transaction_status": "NOT_FOUND"
+}
 ```
 
 ```json title="Request — UPI"
@@ -77,22 +75,20 @@ beneficiary.
 ```
 
 ```json title="Response — 201 (verified synchronously)"
-[
-  {
-    "beneficiary_id": "WVID260302082955LD124BF6",
-    "bank_currency": "inr",
-    "vpa": "user@okaxis",
-    "account_holder_name": "Jhon Doe",
-    "remark": "VERIFIED",
-    "status_code": "VERIFIED",
-    "status_message": "Verification Completed",
-    "verification_status": "active",
-    "verification_data_bank_ref_no": null,
-    "verification_data_bank_beneficiary_name": "John Doe",
-    "verification_data_bank_transaction_remark": null,
-    "verification_data_bank_transaction_status": "VERIFIED"
-  }
-]
+{
+  "beneficiary_id": "WVID260302082955LD124BF6",
+  "bank_currency": "inr",
+  "vpa": "user@okaxis",
+  "account_holder_name": "Jhon Doe",
+  "remark": "VERIFIED",
+  "status_code": "VERIFIED",
+  "status_message": "Verification Completed",
+  "verification_status": "active",
+  "verification_data_bank_ref_no": null,
+  "verification_data_bank_beneficiary_name": "John Doe",
+  "verification_data_bank_transaction_remark": null,
+  "verification_data_bank_transaction_status": "VERIFIED"
+}
 ```
 
 </div>
