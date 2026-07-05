@@ -1,4 +1,4 @@
 {
   "title": "API reference",
-  "pages": ["payouts", "beneficiaries", "balances", "otc"]
+  "pages": ["payouts", "beneficiaries", "balances", "otc", "utilities"]
 }

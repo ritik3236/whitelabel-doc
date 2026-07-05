@@ -1,0 +1,39 @@
+---
+title: Utilities
+description: Public health and time endpoints for liveness checks and clock alignment.
+---
+
+Unauthenticated utility endpoints under `/public`. No API key is required.
+
+## Health check
+
+**GET** <code><ApiUrl env="production" />/public/health</code>
+
+Liveness probe — returns the string `ok` when the service is up.
+
+### Responses
+
+| Code  | Meaning             |
+| ----- | ------------------- |
+| `200` | Service is healthy. |
+
+```text title="Response — 200 OK"
+ok
+```
+
+## Server timestamp
+
+**GET** <code><ApiUrl env="production" />/public/timestamp</code>
+
+Returns the server's current time as a Unix timestamp (seconds). Useful for aligning request
+nonces and signatures with server time.
+
+### Responses
+
+| Code  | Meaning              |
+| ----- | -------------------- |
+| `200` | Current server time. |
+
+```json title="Response — 200 OK"
+1735689600
+```
