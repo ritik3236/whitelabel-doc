@@ -32,6 +32,7 @@ beneficiary.
 | `bank_ifsc_code`          | string  | conditional | The IFSC code of the bank. Required together with `account_number` for bank accounts.    |
 | `account_number`          | string  | conditional | The account number. Required together with `bank_ifsc_code` for bank accounts.            |
 | `vpa`                     | string  | conditional | UPI ID of the beneficiary. Mutually exclusive with `account_number` and `bank_ifsc_code`. |
+| `penny_drop_required`     | boolean | no       | Whether bank-account verification via penny drop should run before the beneficiary is used. Default `true`. |
 | `sync_bank_verification`  | boolean | no       | When `true`, verification runs immediately. When omitted/false, verification batches.       |
 
 ### Examples

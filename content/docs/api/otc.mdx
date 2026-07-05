@@ -89,6 +89,8 @@ Retrieves the list of OTC quotes with their current state.
 | Parameter   | Type    | Notes                                                          |
 | ----------- | ------- | -------------------------------------------------------------- |
 | `quote_id`  | string  | The unique identifier of the quote.                            |
+| `market`    | string  | Filter quotes by market (for example, `usdtinr`).              |
+| `client_reference_id` | string | Filter by the client reference supplied when the quote was created. |
 | `page`      | integer | Pagination — page number.                                      |
 | `limit`     | integer | Pagination — page size.                                        |
 | `ordering`  | string  | Sort direction: `asc` or `desc` (default `desc`).              |
