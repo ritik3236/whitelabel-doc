@@ -252,7 +252,7 @@ guaranteed rate locked in.
 | `amount`              | string | yes      | Amount in the currency named by `req_currency`.                                      |
 | `req_currency`        | string | no       | Currency the `amount` is in. Optional — defaults to the market's base currency (e.g. `usdt` for `usdtinr`) when omitted. Typically set to the fiat side (e.g. `inr`). |
 | `side`                | string | yes      | Order side — currently `sell` only.                                                  |
-| `client_reference_id` | string | yes      | Client-provided reference ID (may be `null`).                                        |
+| `client_reference_id` | string | yes      | Client-provided reference ID (`^[a-zA-Z0-9-]{8,64}$`). Acts as the idempotency key — repeating an id returns the existing order(s). |
 
 <div className="grid gap-4 lg:grid-cols-2">
 

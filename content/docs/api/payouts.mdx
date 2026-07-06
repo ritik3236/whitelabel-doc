@@ -255,7 +255,7 @@ Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page
 | `sender_name`          | string \| null   | Sender name, if supplied on create.                                                                                  |
 | `created_at`           | integer          | Creation timestamp, milliseconds since epoch.                                                                        |
 | `completed_at`         | integer \| null  | Completion timestamp, milliseconds since epoch (same shape as `created_at`). `null` while in flight.                 |
-| `otc_order`            | object \| absent | Present only when the payout was funded by an OTC order (request supplied `otc_market` + `otc_side`). The embedded order follows the [OtcOrderResponse](/api/otc#response-fields--otcorderresponse) schema; its `client_reference_id` is the generated `payout_id`. |
+| `otc_order`            | object \| absent | Present only when the payout was funded by an OTC order (request supplied `otc_quote_id`). The embedded order follows the [OtcOrderResponse](/api/otc#response-fields--otcorderresponse) schema; its `client_reference_id` is the generated `payout_id`. |
 
 #### Payout status codes
 
