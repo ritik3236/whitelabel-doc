@@ -115,6 +115,21 @@ message.
 { "error": "Unauthorized" }
 ```
 
+### Sandbox testing
+
+In the **sandbox** environment the verification outcome is simulated from the **first character of `account_number`**:
+
+| `account_number` starts with | Result                        |
+| ---------------------------- | ----------------------------- |
+| `0`–`9`                      | ✅ Success                     |
+| `A`                          | ❌ Invalid account number      |
+| `B`                          | ❌ Invalid IFSC                |
+| `C`                          | ❌ Account blocked / frozen    |
+| `D`                          | ❌ NRE account                 |
+| `E`                          | ❌ Daily limit exceeded        |
+
+Any other prefix returns `success: false`. Only `E` responds with **HTTP 400** — every other case returns **HTTP 200**.
+
 ## Get beneficiary status
 
 **GET** <code><ApiUrl env="production" />/account/beneficiaries/status</code>

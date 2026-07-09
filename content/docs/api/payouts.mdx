@@ -185,6 +185,20 @@ propagate through (also as `422`):
 { "errors": ["authz.invalid_signature"] }
 ```
 
+### Sandbox testing
+
+In the **sandbox** environment the payout outcome is simulated from the **first character of `account_number`**:
+
+| `account_number` starts with | Result                                |
+| ---------------------------- | ------------------------------------- |
+| `0`–`2`                      | ✅ Random `PROCESSING` or `SUCCESS`    |
+| `3`                          | ⭕️ Always `PROCESSING`                 |
+| `4`                          | ❌ `FAILED` — invalid transaction      |
+| `5`–`6`                      | ❌ `FAILED` — provider down            |
+| `9`                          | ❌ `FAILED` — transaction terminated   |
+
+Any other prefix returns a random fallback failure.
+
 ## Get payout status
 
 **GET** <code><ApiUrl env="production" />/account/payouts/status</code>
