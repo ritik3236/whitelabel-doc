@@ -117,18 +117,18 @@ message.
 
 ### Sandbox testing
 
-In the **sandbox** environment the verification outcome is simulated from the **first character of `account_number`**:
+In the **sandbox** environment the penny-drop outcome is simulated from the **first character of `account_number`**. Creation always returns **HTTP 201** with `verification_status: processing`; the **terminal** result is delivered **asynchronously** via the beneficiary webhook callback (and reflected on the status endpoint):
 
-| `account_number` starts with | Result                        |
-| ---------------------------- | ----------------------------- |
-| `0`–`9`                      | ✅ Success                     |
-| `A`                          | ❌ Invalid account number      |
-| `B`                          | ❌ Invalid IFSC                |
-| `C`                          | ❌ Account blocked / frozen    |
-| `D`                          | ❌ NRE account                 |
-| `E`                          | ❌ Daily limit exceeded        |
+| `account_number` starts with | `verification_status` | `status_code`             |
+| ---------------------------- | --------------------- | ------------------------- |
+| `0`–`9`                      | `active`              | `VERIFIED`                |
+| `A`                          | `rejected`            | `INVALID_ACCOUNT_NUMBER`  |
+| `B`                          | `rejected`            | `INVALID_IFSC_CODE`       |
+| `C`                          | `rejected`            | `ACCOUNT_BLOCKED`         |
+| `D`                          | `rejected`            | `NRE_ACCOUNT`             |
+| `E`                          | stays `processing`    | `PROCESSING` — daily limit; only rejected later during DB cleanup |
 
-Any other prefix returns `success: false`. Only `E` responds with **HTTP 400** — every other case returns **HTTP 200**.
+There is no synchronous failure response — every prefix returns **HTTP 201**, and the pass/fail verdict arrives on the callback. An `E` beneficiary never resolves on its own; it stays `processing` until a later DB-cleanup pass may reject it.
 
 ## Get beneficiary status
 
