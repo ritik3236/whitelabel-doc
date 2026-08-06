@@ -6,6 +6,26 @@ description: API releases in reverse chronological order.
 Backward-compatible enhancements only — no breaking changes since the initial
 release.
 
+## 1.7.0 — Sender identity on payouts
+
+[Create payout](/api/payouts#create-payout) now accepts optional
+sender-identity fields for KYC / travel-rule reporting. All are optional and
+independent — send only what you have. What you send is stored under
+`metadata.sender_info` and echoed back on the payout and status responses.
+
+- `sender_phone_number` — E.164 phone number.
+- `sender_nationality` — ISO 3166-1 alpha-2 country code.
+- `sender_dob` — date of birth (`YYYY-MM-DD`); must be a real date in the past.
+- `sender_doc_number` — identity-document number.
+- `sender_doc_type` — one of `pan_card`, `aadhaar`, `passport`, `bvn`,
+  `voter_id`, `driving_license`.
+
+New `422` codes: `account.payout.invalid_sender_phone_number`,
+`invalid_sender_nationality`, `invalid_sender_dob`, `invalid_sender_doc_number`,
+`invalid_sender_doc_type`.
+
+Existing integrations keep working unchanged — all fields are optional.
+
 ## 1.6.1 — Error code documentation
 
 Documented the `errors` array responses across Payout, OTC Quote, and OTC
