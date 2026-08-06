@@ -173,6 +173,12 @@ response.
 
 Error responses return an `errors` array of machine-readable codes.
 
+Field-validation errors (the `invalid_sender_*` codes and any missing / invalid
+field) are returned **prefixed with the offending parameter name** — e.g.
+`"sender_phone_number account.payout.invalid_sender_phone_number"`. Match on the
+code, not the whole string. Business errors such as `duplicate_reference_id`
+are returned bare.
+
 **`422` codes specific to this endpoint:**
 
 - `account.payout.duplicate_reference_id_#<client_reference_id>` — a payout
@@ -190,8 +196,12 @@ propagate through (also as `422`):
 - `market.otc_quote.amount_mismatch` — quote amount no longer matches.
 - `market.otc_quote.expired` — quote is past its expiry.
 
-```json title="422 Duplicate reference"
+```json title="422 Duplicate reference (bare code)"
 { "errors": ["account.payout.duplicate_reference_id_#BIGBULL0010"] }
+```
+
+```json title="422 Sender validation (field-prefixed)"
+{ "errors": ["sender_phone_number account.payout.invalid_sender_phone_number"] }
 ```
 
 ```json title="422 OTC quote expired (propagated)"
