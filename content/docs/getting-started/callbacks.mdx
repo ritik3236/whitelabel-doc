@@ -44,7 +44,22 @@ in your secret manager. You will need it to verify incoming requests.
 - **Header:** `X-Signature`
 - **Payload:** JSON
 
+You can register a **separate URL per event type** (payout, bank-beneficiary, UPI-beneficiary), so different event families can be delivered to different endpoints.
+
+## Delivery, acknowledgement & retries
+
+- **Acknowledgement:** respond with any **HTTP 2xx**. A response body is **not** required — the status code alone acknowledges receipt.
+- **Timeouts:** ~**10 s** read/response, ~**1 s** to connect.
+- **Retries:** up to **2** retries (3 attempts total), starting at ~**0.5 s** with exponential backoff (≈0.5 s, then ≈1 s).
+- **After the final attempt:** delivery is **best-effort** — if all attempts fail, the event is **not** re-queued and there is no dead-letter replay.
+
+Because delivery is best-effort, treat callbacks as a **fast notification, not a guaranteed ledger**: keep your handler **idempotent** (dedupe on `payout_id` / `client_reference_id`), return `2xx` quickly and process asynchronously, and **reconcile via the status APIs** as the source of truth.
+
 ## Payout status update
+
+Payout callbacks are delivered on the **terminal** events `succeed`, `refunded`, and
+`rejected` (the in-flight `processing` state is **not** delivered as a webhook). The body
+carries these **10 fields**:
 
 ```json
 {
@@ -54,17 +69,27 @@ in your secret manager. You will need it to verify incoming requests.
   "client_reference_id": "BIGBULL0001-2",
   "amount": "100.0",
   "fee": "0.0",
-  "payout_status": "processing",
-  "bank_transaction_id": null,
-  "status_code": "PROCESSING",
-  "status_message": "Payout in Progress",
-  "sender_name": null,
-  "created_at": 1766570103137,
-  "completed_at": null
+  "payout_status": "succeed",
+  "bank_transaction_id": "UTR2412240955030001",
+  "status_code": "COMPLETED",
+  "status_message": "Payout Completed"
 }
 ```
 
+On a **rejected** payout the same 10 fields are sent with:
+`payout_status: "rejected"`, `bank_transaction_id: null`,
+`status_code: "EXT: <reason> | Auto rejected"`, `status_message: null`.
+
+<Callout type="info">
+The payout callback does **not** include `sender_name`, `created_at`, or `completed_at`
+(those appear on the `GET /account/payouts/status` response, not the webhook), nor any
+sender-identity or OTC fields. Correlate to that data via `client_reference_id` / `payout_id`.
+</Callout>
+
 ## Bank-account beneficiary status update
+
+Core body is **8 fields**; the four `verification_data_*` fields are added **only when a
+penny-drop verification ran**. Example (verified):
 
 ```json
 {
@@ -83,20 +108,26 @@ in your secret manager. You will need it to verify incoming requests.
 }
 ```
 
+On a **rejected** verification, `verification_status: "rejected"`, `status_code` carries the
+reason (e.g. `ACCOUNT_BLOCKED`, `INVALID_ACCOUNT_NUMBER`), and the `verification_data_*` fields
+are `null` except `verification_data_bank_transaction_status: "FAILED"`.
+
 ## UPI beneficiary status update
+
+Core body is **6 fields** (note: **no** `account_holder_name`); the four `verification_data_*`
+fields are added **only when a penny-drop verification ran**. Example (verified):
 
 ```json
 {
   "beneficiary_id": "WBID251024044324GM560AAE",
   "bank_currency": "inr",
   "vpa": "user@upi",
-  "account_holder_name": "AMIT DOE",
   "status_code": "VERIFIED",
   "status_message": "Verification Completed",
   "verification_status": "active",
-  "verification_data_bank_ref_no": null,
+  "verification_data_bank_ref_no": "BRN-20251024T044324777-93VQR9",
   "verification_data_bank_beneficiary_name": "USER_NAME",
-  "verification_data_bank_transaction_remark": null,
+  "verification_data_bank_transaction_remark": "Transaction Successful",
   "verification_data_bank_transaction_status": "VERIFIED"
 }
 ```
@@ -113,12 +144,17 @@ in your secret manager. You will need it to verify incoming requests.
 Every callback request includes an `X-Signature` header. You **must verify**
 this signature before processing the payload.
 
-### Server-side signing (Ruby)
+<Callout type="warn">
+Verify over the **raw request body exactly as received** — do **not** `JSON.parse`
+and then re-serialize. Re-stringifying can change byte-level details (key order,
+whitespace, unicode escaping) and cause verification to fail even for a genuine
+callback. Capture the raw body **before** any JSON parsing.
+</Callout>
 
-The signature is generated as:
+The signature is `HMAC-SHA256(webhook_secret, rawBody)`, hex-encoded:
 
-```ruby
-OpenSSL::HMAC.hexdigest("SHA256", secret_key, payload.to_json)
+```
+X-Signature = HMAC_SHA256(webhook_secret, <raw request body bytes>)   // lowercase hex
 ```
 
 ### Verification (JavaScript / TypeScript)
@@ -126,14 +162,15 @@ OpenSSL::HMAC.hexdigest("SHA256", secret_key, payload.to_json)
 ```ts title="verify.ts"
 import crypto from "crypto";
 
-export function verifySignature(signature: string, payload: unknown, secret: string): boolean {
+// `rawBody` is the exact request body string as received (before JSON.parse).
+export function verifySignature(signature: string, rawBody: string, secret: string): boolean {
   const computed = crypto
     .createHmac("sha256", secret)
-    .update(JSON.stringify(payload))
+    .update(rawBody, "utf8")
     .digest("hex");
 
   return crypto.timingSafeEqual(
-    Buffer.from(signature, "hex"),
+    Buffer.from(signature.trim().toLowerCase(), "hex"),
     Buffer.from(computed, "hex"),
   );
 }
