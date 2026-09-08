@@ -35,7 +35,8 @@ returned `payout_id`.
 | `vpa`                  | string  | conditional | UPI ID of the recipient. Mutually exclusive with `account_number` and `bank_ifsc_code`.      |
 | `sender_name`          | string  | no       | Name of the sender. Max 128 chars. Only letters and spaces are kept — any non-`[A-Za-z ]` characters (digits, punctuation) are **stripped server-side**, so send an alphabetic name to avoid surprises. |
 | `sender_phone_number`  | string  | no       | Sender's phone number in E.164 form (`^\+?[1-9]\d{7,14}$` — 8–15 digits, optional leading `+`). Spaces, `(`, `)` and `-` are stripped. e.g. `+919876543210`. |
-| `sender_address`       | object  | no       | Sender's postal address (replaces `sender_nationality`). Nested, all sub-fields optional: `address`, `city`, `state`, `postal_code`, and `country_code` (ISO 3166-1 alpha-3, `^[A-Z]{3}$`, upper-cased, e.g. `IND`). |
+| `sender_nationality`   | string  | no       | Sender's nationality (citizenship) as an ISO 3166-1 alpha-3 country code (`^[A-Z]{3}$`), upper-cased. e.g. `IND`. |
+| `sender_address`       | object  | no       | Sender's postal address. Nested, all sub-fields optional: `address`, `city`, `state`, `postal_code`, and `country_code` (ISO 3166-1 alpha-3, `^[A-Z]{3}$`, upper-cased, e.g. `IND`). Independent of `sender_nationality`. |
 | `sender_dob`           | string  | no       | Sender's date of birth as `YYYY-MM-DD`; must be a real calendar date in the past. e.g. `1990-05-17`. |
 | `sender_doc_number`    | string  | no       | Sender's identity-document number (`^[A-Z0-9/-]{4,32}$`), upper-cased with spaces removed. e.g. `ABCDE1234F`. |
 | `sender_doc_type`      | string  | no       | Sender's identity-document type. One of `pan_card`, `aadhaar`, `passport`, `bvn`, `voter_id`, `driving_license`. |
@@ -184,6 +185,7 @@ are returned bare.
 - `account.payout.duplicate_reference_id_#<client_reference_id>` — a payout
   with that `client_reference_id` already exists.
 - `account.payout.invalid_sender_phone_number` — `sender_phone_number` is not valid E.164.
+- `account.payout.invalid_sender_nationality` — `sender_nationality` is not an ISO 3166-1 alpha-3 code.
 - `account.payout.invalid_sender_country_code` — `sender_address.country_code` is not an ISO 3166-1 alpha-3 code.
 - `account.payout.invalid_sender_dob` — `sender_dob` is not a real past `YYYY-MM-DD` date.
 - `account.payout.invalid_sender_doc_number` — `sender_doc_number` fails the format check.
@@ -273,6 +275,7 @@ Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page
     "status_message": "Payout in Progress",
     "sender_name": null,
     "sender_phone_number": null,
+    "sender_nationality": null,
     "sender_dob": null,
     "sender_doc_number": null,
     "sender_doc_type": null,
@@ -300,6 +303,7 @@ Pagination metadata is returned via response headers: `Total`, `Page`, `Per-Page
 | `bank_transaction_id`  | string \| null   | Transaction reference assigned by the rail bank.                                                                     |
 | `sender_name`          | string \| null   | Sender name, if supplied on create.                                                                                  |
 | `sender_phone_number`  | string \| null   | Sender phone number (E.164), if supplied on create.                                                                  |
+| `sender_nationality`   | string \| null   | Sender nationality / citizenship (ISO 3166-1 alpha-3), if supplied on create.                                        |
 | `sender_dob`           | string \| null   | Sender date of birth (`YYYY-MM-DD`), if supplied on create.                                                          |
 | `sender_doc_number`    | string \| null   | Sender identity-document number, if supplied on create.                                                             |
 | `sender_doc_type`      | string \| null   | Sender identity-document type, if supplied on create.                                                               |

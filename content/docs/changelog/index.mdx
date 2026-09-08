@@ -3,26 +3,25 @@ title: Changelog
 description: API releases in reverse chronological order.
 ---
 
-Backward-compatible enhancements, with one revision to the (newly-added)
-sender-identity fields in 1.7.1 — see below.
+Backward-compatible enhancements only — no breaking changes since the initial
+release.
 
-## 1.7.1 — Sender address replaces nationality
+## 1.7.1 — Sender postal address
 
-The payout sender-identity set is revised: `sender_nationality` is **removed** and
-replaced by a nested **`sender_address`** object on
-[Create payout](/api/payouts#create-payout), echoed back on the payout and status
-responses. All sub-fields optional:
+[Create payout](/api/payouts#create-payout) now also accepts a nested
+**`sender_address`** object **alongside** the existing sender-identity fields
+(`sender_nationality` is retained). It is echoed back on the payout and status
+responses; all sub-fields optional:
 
 - `sender_address.address` — street address.
 - `sender_address.city`
 - `sender_address.state`
 - `sender_address.postal_code`
-- `sender_address.country_code` — ISO 3166-1 alpha-3 (e.g. `IND`); the sender's
-  country now lives here.
+- `sender_address.country_code` — the address country as ISO 3166-1 alpha-3
+  (e.g. `IND`); independent of `sender_nationality` (citizenship).
 
-The `422` code `account.payout.invalid_sender_nationality` is replaced by
-`account.payout.invalid_sender_country_code` (`sender_address.country_code` is not
-a valid alpha-3 code).
+New `422` code: `account.payout.invalid_sender_country_code`
+(`sender_address.country_code` is not a valid alpha-3 code).
 
 ## 1.7.0 — Sender identity on payouts
 
